@@ -17,13 +17,12 @@ require 'jeweler'
 require './lib/cielo/version.rb'
 Jeweler::Tasks.new do |gem|
   # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
-  gem.name = "cielo"
-  gem.homepage = "http://github.com/crafters/cielo"
+  gem.name = "cielo_old"
   gem.license = "MIT"
-  gem.summary = %Q{Integração com a cielo}
-  gem.description = %Q{Integração com a cielo}
-  gem.email = "crafters@crafters.com.br"
-  gem.authors = ["Crafters Software Studio", "Felipe Rodrigues"]
+  gem.summary = 'Integração com a cielo'
+  gem.description = 'Integração com a cielo'
+  gem.email = 'ton.garcia.jr@gmail.com'
+  gem.authors = ['Ilton']
   gem.version = Cielo::VERSION
   # dependencies defined in Gemfile
 end
