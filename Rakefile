@@ -24,7 +24,7 @@ Jeweler::Tasks.new do |gem|
   gem.description = %Q{Integração com a cielo}
   gem.email = "crafters@crafters.com.br"
   gem.authors = ["Crafters Software Studio", "Felipe Rodrigues"]
-  gem.version = Cielo::Version::STRING
+  gem.version = Cielo::VERSION
   # dependencies defined in Gemfile
 end
 Jeweler::RubygemsDotOrgTasks.new
