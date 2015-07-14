@@ -12,12 +12,12 @@ require 'uri'
 module Cielo
 
   class Production
-    BASE_URL = 'ecommerce.cbmp.com.br'
+    BASE_URL = 'ecommerce.cielo.com.br'
     WS_PATH = '/servicos/ecommwsec.do'
   end
 
   class Test
-    BASE_URL = 'ecommerce.cielo.com.br'
+    BASE_URL = 'qasecommerce.cielo.com.br'
     WS_PATH = '/servicos/ecommwsec.do'
   end
   
