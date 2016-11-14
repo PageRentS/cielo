@@ -37,21 +37,24 @@ describe Cielo::Token do
       Cielo.environment = :production
 
       @secrets = Helper.secrets
-      store_settings = @secrets['production']['store_settings']
-      Cielo.stub(:numero_afiliacao).and_return(store_settings['membership'])
-      Cielo.stub(:chave_acesso).and_return(store_settings['access_key'])
-
+      store_settings = @secrets[Cielo.environment.to_s]['store_settings']
+      allow(Cielo).to receive(:numero_afiliacao).and_return(store_settings['membership'])
+      allow(Cielo).to receive(:chave_acesso).and_return(store_settings['access_key'])
       @transaction = Cielo::Transaction.new
 
+      mock_token_charged_json = '{"transacao":{"tid":"1063542305000000040A","pan":"OYV1BjLr7lL/jgE2qpPIg03YZhk7i/rUXy0ylv3ljp8=","dados-pedido":{"numero":"5","valor":"110","moeda":"986","data-hora":"2016-11-14T19:59:57.751-02:00","idioma":"PT","taxa-embarque":"0"},"forma-pagamento":{"bandeira":"visa","produto":"1","parcelas":"1"},"status":"6","autenticacao":{"codigo":"6","mensagem":"Transacao sem autenticacao","data-hora":"2016-11-14T19:59:57.769-02:00","valor":"110","eci":"7"},"autorizacao":{"codigo":"6","mensagem":"Transação autorizada","data-hora":"2016-11-14T19:59:57.776-02:00","valor":"110","lr":"00","arp":"786906","nsu":"000064"},"captura":{"codigo":"6","mensagem":"Transacao capturada com sucesso","data-hora":"2016-11-14T19:59:58.921-02:00","valor":"110"}}}'
+      mock_generated_token_json = '{"transacao":{"tid":"106354230500000003CA","pan":"OYV1BjLr7lL/jgE2qpPIg03YZhk7i/rUXy0ylv3ljp8=","dados-pedido":{"numero":"5","valor":"110","moeda":"986","data-hora":"2016-11-14T19:57:09.257-02:00","idioma":"PT","taxa-embarque":"0"},"forma-pagamento":{"bandeira":"visa","produto":"1","parcelas":"1"},"status":"6","autenticacao":{"codigo":"6","mensagem":"Transacao sem autenticacao","data-hora":"2016-11-14T19:57:09.291-02:00","valor":"110","eci":"7"},"autorizacao":{"codigo":"6","mensagem":"Transação autorizada","data-hora":"2016-11-14T19:57:09.334-02:00","valor":"110","lr":"00","arp":"780914","nsu":"000060"},"captura":{"codigo":"6","mensagem":"Transacao capturada com sucesso","data-hora":"2016-11-14T19:57:10.427-02:00","valor":"110"},"token":{"dados-token":{"codigo-token":"44TyuILHFX+dtxOVvDdy2ypB5AfG8Cm93G7H9h2dKnw=","status":"1","numero-cartao-truncado":"498423******8979"}}}}'
+      mock_generated_token = JSON.parse(mock_generated_token_json).deep_symbolize_keys
+      mock_token_charged = JSON.parse(mock_token_charged_json).deep_symbolize_keys
 
       card = @secrets['production']['card']
-      production_params = {
+      charge_gen_token_params = {
           capturar: true,
           produto: 1,
           'gerar-token': true,
           'url-retorno': 'a.com',
           autorizar: 3,
-          valor: 1,
+          valor: 110,
           numero: 5,
           moeda: 986,
           cartao_numero: card['number'],
@@ -61,33 +64,46 @@ describe Cielo::Token do
           bandeira: card['brand']
       }
 
-      # @generated_token = @transaction.create! generate_token_params, :store
-      @generated_token = @transaction.create! production_params, :store
+      @generated_token = mock_generated_token
+      # @generated_token = @transaction.create! charge_gen_token_params, :store
+      @token_data = @generated_token[:transacao][:token][:'dados-token']
 
-      token_charge_params = {
-        capturar: true,
-        produto: 1,
-        'gerar-token': true,
-        'url-retorno': 'a.com',
-        autorizar: 3,
-        valor: 1,
-        numero: 5,
-        moeda: 986,
-        bandeira: 'visa',
-        token: @generated_token[:transacao][:token][:'dados-token'][:'codigo-token']
-      }
+      base_generated_token_params = charge_gen_token_params.except(:'gerar-token', :cartao_validade, :cartao_seguranca, :cartao_portador, :cartao_numero)
+      token_charge_params = base_generated_token_params.merge(token: @token_data[:'codigo-token'])
 
-      @token_charged = @transaction.create! token_charge_params, :store
+      # @token_charged = @transaction.create! token_charge_params, :store
+      @token_charged = mock_token_charged
+
+      # Expectation aux variables
+      @generated_token_transaction = @generated_token[:transacao]
+      @token_charged_transaction = @token_charged[:transacao]
+
+      @token_charged_card_brand = @token_charged_transaction[:'forma-pagamento'][:bandeira]
+      @generated_token_card_brand = @generated_token_transaction[:'forma-pagamento'][:bandeira]
+
+      @token_charged_purchase = @token_charged_transaction[:'dados-pedido'][:numero]
+      @generated_token_purchase = @generated_token_transaction[:'dados-pedido'][:numero]
+
+      @token_charged_value = @token_charged_transaction[:'dados-pedido'][:valor]
+      @generated_token_value = @generated_token_transaction[:'dados-pedido'][:valor]
     end
 
     it 'retrieves a successful token generated from a charge' do
-      expect(@generated_token[:'retorno-token'][:token][:'dados-token'][:'codigo-token']).to_not be_nil
-      expect(@generated_token[:'retorno-token'][:token][:'dados-token'][:'numero-cartao-truncadov']).to_not be_nil
+      expect(@token_data[:'codigo-token']).to_not be_nil
+      expect(@token_data[:'numero-cartao-truncado']).to_not be_nil
     end
 
-    it 'charges using the previous generated token' do
-      expect(@token_charged).to_not be_nil
-      expect(@token_charged[:erro]).to be_nil
+    it 'must have a transaction with a valid TID' do
+      expect(@token_charged_transaction).to_not be_nil
+      expect(@token_charged_transaction[:tid]).to_not be_nil
+    end
+
+    it 'charged purchase token must be the same which generated it' do
+      expect(@token_charged_purchase).to eq(@generated_token_purchase)
+    end
+
+    it 'charged token value must be the same the purchase generator value' do
+      expect(@token_charged_value).to eq(@generated_token_value)
     end
   end
 

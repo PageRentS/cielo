@@ -21,7 +21,7 @@ module Cielo
     end
 
     def request!(params={})
-      str_params = ""
+      str_params = ''
       params.each do |key, value|
         str_params+="&" unless str_params.empty?
         str_params+="#{key}=#{value}"

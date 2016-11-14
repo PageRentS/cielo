@@ -24,7 +24,7 @@ module Cielo
       message = @connection.xml_builder('requisicao-transacao') do |xml|
         xml.tag!("dados-portador") do
           if parameters[:token].present?
-            xml.tag!('token', parameters[:token])
+            xml.tag!('token', CGI.escape(parameters[:token]))
           else
             xml.tag!('numero', parameters[:cartao_numero])
             xml.tag!('validade', parameters[:cartao_validade])
