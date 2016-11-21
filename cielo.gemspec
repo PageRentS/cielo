@@ -31,6 +31,7 @@ Gem::Specification.new do |s|
     'Rakefile',
     'cielo.gemspec',
     'lib/cielo.rb',
+    'lib/cielo/string.rb',
     'lib/cielo/connection.rb',
     'lib/cielo/token.rb',
     'lib/cielo/transaction.rb',
